@@ -23,13 +23,17 @@ async fn get_clipboard_history(state: State<'_, AppState>) -> Result<Vec<Clipboa
 
 #[tauri::command]
 async fn copy_to_clipboard(content: String, state: State<'_, AppState>) -> Result<(), String> {
-    state.monitor.copy_to_clipboard(&content).map_err(|e| e.to_string())
+    state
+        .monitor
+        .copy_to_clipboard(&content)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 async fn pin_item(id: String, is_pinned: bool, state: State<'_, AppState>) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    db.update_pin_status(&id, is_pinned).map_err(|e| e.to_string())
+    db.update_pin_status(&id, is_pinned)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -51,7 +55,11 @@ async fn add_tag(item_id: String, tag: String, state: State<'_, AppState>) -> Re
 }
 
 #[tauri::command]
-async fn remove_tag(item_id: String, tag: String, state: State<'_, AppState>) -> Result<(), String> {
+async fn remove_tag(
+    item_id: String,
+    tag: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     db.remove_tag(&item_id, &tag).map_err(|e| e.to_string())
 }
@@ -65,20 +73,20 @@ pub fn run() {
             let app_handle = app.handle();
             let app_dir = app_handle.path().app_data_dir().unwrap();
             std::fs::create_dir_all(&app_dir).unwrap();
-            
+
             let db_path = app_dir.join("clipedia.db");
             let db = Arc::new(Mutex::new(Database::new(&db_path).unwrap()));
-            
+
             let monitor = Arc::new(ClipboardMonitor::new(db.clone()).unwrap());
             let monitor_clone = monitor.clone();
-            
+
             // Start clipboard monitoring in background
             tauri::async_runtime::spawn(async move {
                 monitor_clone.start_monitoring().await;
             });
-            
+
             app.manage(AppState { db, monitor });
-            
+
             // グローバルホットキーの登録
             let app_handle_clone = app_handle.clone();
             app.global_shortcut()
@@ -86,7 +94,7 @@ pub fn run() {
                     let _ = show_popup_window(&app_handle_clone);
                 })
                 .unwrap();
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

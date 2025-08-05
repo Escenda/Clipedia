@@ -1,6 +1,6 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std::error::Error>> {
     // 既存のポップアップウィンドウがあれば閉じる
@@ -9,25 +9,25 @@ pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std
         let _ = window.close();
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
-    
+
     println!("Creating new popup window");
-    
+
     // ポップアップウィンドウを作成
     let window = WebviewWindowBuilder::new(app, "popup", WebviewUrl::App("popup.html".into()))
         .title("Clipedia Quick Access")
         .inner_size(400.0, 500.0)
-        .center()  // 画面の中央に配置
+        .center() // 画面の中央に配置
         .decorations(false)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
         .build()?;
-    
+
     println!("Popup window created");
-    
+
     // 初回フォーカスを追跡するフラグ
     let initial_focus_done = Arc::new(AtomicBool::new(false));
-    
+
     // ウィンドウイベントを監視
     let window_clone = window.clone();
     let initial_focus_done_clone = initial_focus_done.clone();
@@ -41,7 +41,7 @@ pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std
             }
             WindowEvent::Focused(focused) => {
                 println!("Popup window focus changed: {}", focused);
-                
+
                 // 初回フォーカス完了後、フォーカスを失ったら閉じる
                 if initial_focus_done_clone.load(Ordering::Relaxed) && !*focused {
                     println!("Popup window lost focus, closing");
@@ -55,14 +55,14 @@ pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std
             _ => {}
         }
     });
-    
+
     // ウィンドウを表示
     window.show()?;
     println!("Popup window shown");
-    
+
     // フォーカスを設定
     window.set_focus()?;
     println!("Popup window focused");
-    
+
     Ok(window)
 }

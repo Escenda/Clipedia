@@ -1,9 +1,9 @@
+use crate::db::Database;
+use crate::models::{ClipboardItem, ClipboardItemType};
 use arboard::Clipboard;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time::sleep;
-use crate::models::{ClipboardItem, ClipboardItemType};
-use crate::db::Database;
 
 pub struct ClipboardMonitor {
     clipboard: Arc<Mutex<Clipboard>>,
@@ -57,11 +57,11 @@ impl ClipboardMonitor {
     pub fn copy_to_clipboard(&self, content: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut clipboard = self.clipboard.lock().unwrap();
         clipboard.set_text(content)?;
-        
+
         // Update last content to avoid re-saving
         let mut last_content = self.last_content.lock().unwrap();
         *last_content = Some(content.to_string());
-        
+
         Ok(())
     }
 }
