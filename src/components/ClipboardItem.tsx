@@ -1,8 +1,9 @@
 import React from 'react';
-import { Copy, Pin, PinOff, Trash2, Tag, Clock } from 'lucide-react';
+import { Copy, Pin, PinOff, Trash2, Clock } from 'lucide-react';
 import { ClipboardItem as ClipboardItemType } from '../types/clipboard';
 import { Button } from './Button';
 import { cn } from '../lib/utils';
+import { TagBadge } from './TagBadge';
 
 interface ClipboardItemProps {
   item: ClipboardItemType;
@@ -57,15 +58,29 @@ export const ClipboardItem: React.FC<ClipboardItemProps> = ({
           </p>
           {item.tags && item.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
-              {item.tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 px-3 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"
-                >
-                  <Tag className="h-3 w-3" />
-                  {tag}
-                </span>
-              ))}
+              {item.tags.map((tag, index) => {
+                // タグの色を決定（システムタグのデフォルト色）
+                const getTagColor = (tag: string) => {
+                  const colorMap: { [key: string]: string } = {
+                    'url': '#3B82F6',
+                    'code': '#10B981',
+                    'json': '#F59E0B',
+                    'markdown': '#8B5CF6',
+                    'email': '#EF4444',
+                    'phone': '#EC4899',
+                    'path': '#6366F1',
+                  };
+                  return colorMap[tag] || '#6B7280';
+                };
+
+                return (
+                  <TagBadge
+                    key={index}
+                    tag={tag}
+                    color={getTagColor(tag)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-// import { Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { ClipboardItem } from '../types/clipboard';
 import { ContentItem } from './ContentItem';
+import { SearchBar } from './SearchBar';
+import { TagFilter } from './TagFilter';
 import { cn } from '../lib/utils';
 
 interface ContentAreaProps {
@@ -23,6 +25,9 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [useRegex, setUseRegex] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [displayItems, setDisplayItems] = useState<ClipboardItem[]>(items);
 
   const filters: { id: FilterType; label: string }[] = [
     { id: 'all', label: 'ALL' },
@@ -31,28 +36,82 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     { id: 'links', label: 'LINKS' },
   ];
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = item.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = activeFilter === 'all' || 
-      (activeFilter === 'code' && item.content.includes('{')) ||
-      (activeFilter === 'links' && item.content.includes('http')) ||
-      (activeFilter === 'text' && !item.content.includes('{') && !item.content.includes('http'));
-    
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    performSearch();
+  }, [searchQuery, useRegex, selectedTags, activeFilter, items]);
+
+  const performSearch = async () => {
+    try {
+      let filteredItems = items;
+
+      // 検索クエリがある場合
+      if (searchQuery) {
+        if (useRegex) {
+          // 正規表現検索
+          const searchResults = await invoke<ClipboardItem[]>('search_items', {
+            pattern: searchQuery,
+            useRegex: true
+          });
+          filteredItems = searchResults;
+        } else {
+          // 通常検索
+          filteredItems = items.filter(item => 
+            item.content.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
+      }
+
+      // タグフィルター
+      if (selectedTags.length > 0) {
+        filteredItems = filteredItems.filter(item =>
+          selectedTags.some(tag => item.tags?.includes(tag))
+        );
+      }
+
+      // タイプフィルター
+      if (activeFilter !== 'all') {
+        filteredItems = filteredItems.filter(item => {
+          if (activeFilter === 'code') return item.tags?.includes('code');
+          if (activeFilter === 'links') return item.tags?.includes('url');
+          if (activeFilter === 'text') return !item.tags?.includes('code') && !item.tags?.includes('url');
+          return true;
+        });
+      }
+
+      setDisplayItems(filteredItems);
+    } catch (error) {
+      console.error('Search error:', error);
+      setDisplayItems(items);
+    }
+  };
+
+  const handleTagSelect = (tag: string) => {
+    setSelectedTags(prev => [...prev, tag]);
+  };
+
+  const handleTagDeselect = (tag: string) => {
+    setSelectedTags(prev => prev.filter(t => t !== tag));
+  };
 
   return (
     <>
       {/* Search and Filters */}
       <div className="border-b border-gray-100 dark:border-gray-900 p-8">
         <div className="max-w-4xl">
-          <div className="relative mb-6">
-            <input
-              type="text"
+          <div className="mb-6">
+            <SearchBar
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search the collection..."
-              className="w-full text-lg py-3 pr-4 bg-transparent border-b border-gray-200 dark:border-gray-800 focus:border-gray-400 dark:focus:border-gray-600 focus:outline-none transition-colors placeholder:text-gray-400 italic"
+              onChange={setSearchQuery}
+              onSearchModeChange={setUseRegex}
+              placeholder="コレクションを検索..."
+            />
+          </div>
+          
+          <div className="mb-6">
+            <TagFilter
+              selectedTags={selectedTags}
+              onTagSelect={handleTagSelect}
+              onTagDeselect={handleTagDeselect}
             />
           </div>
           
@@ -78,12 +137,12 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
       {/* Content List */}
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-4xl space-y-6">
-          {filteredItems.length === 0 ? (
+          {displayItems.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-gray-400 italic">No items in collection</p>
+              <p className="text-gray-400 italic">該当するアイテムがありません</p>
             </div>
           ) : (
-            filteredItems.map((item) => (
+            displayItems.map((item) => (
               <ContentItem
                 key={item.id}
                 item={item}

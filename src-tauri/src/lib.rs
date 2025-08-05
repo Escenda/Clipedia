@@ -3,6 +3,7 @@ mod db;
 mod models;
 mod tray;
 mod windows;
+mod content_analyzer;
 
 use clipboard::ClipboardMonitor;
 use db::Database;
@@ -88,6 +89,42 @@ async fn remove_tag(
 }
 
 #[tauri::command]
+async fn get_all_tags(state: State<'_, AppState>) -> Result<Vec<(String, Option<String>, bool)>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.get_all_tags().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn create_custom_tag(state: State<'_, AppState>, name: String, color: Option<String>) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.create_custom_tag(&name, color.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn update_tag_color(state: State<'_, AppState>, name: String, color: String) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.update_tag_color(&name, &color).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn delete_custom_tag(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.delete_custom_tag(&name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn search_items(state: State<'_, AppState>, pattern: String, use_regex: bool) -> Result<Vec<ClipboardItem>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.search_items(&pattern, use_regex).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_items_by_tag(state: State<'_, AppState>, tag: String) -> Result<Vec<ClipboardItem>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.get_items_by_tag(&tag).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn update_tray_menu(
     app_handle: tauri::AppHandle,
     state: State<'_, AppState>,
@@ -169,7 +206,13 @@ pub fn run() {
             delete_all_items,
             add_tag,
             remove_tag,
-            update_tray_menu
+            update_tray_menu,
+            get_all_tags,
+            create_custom_tag,
+            update_tag_color,
+            delete_custom_tag,
+            search_items,
+            get_items_by_tag
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
