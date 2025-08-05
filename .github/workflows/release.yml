@@ -38,10 +38,67 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(grep '"version"' package.json | cut -d '"' -f 4)
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+      
+      - name: Determine version bump
+        id: version_bump
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          CURRENT_VERSION="${{ steps.current_version.outputs.current_version }}"
+          
+          # Parse current version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          
+          # Determine version bump based on commit message
+          if [[ "$COMMIT_MSG" == *"BREAKING CHANGE"* ]] || [[ "$COMMIT_MSG" == *"!"* ]]; then
+            # Major version bump (breaking change)
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+            BUMP_TYPE="major"
+          elif [[ "$COMMIT_MSG" == feat:* ]] || [[ "$COMMIT_MSG" == feature:* ]]; then
+            # Minor version bump (new feature)
+            MINOR=$((MINOR + 1))
+            PATCH=0
+            BUMP_TYPE="minor"
+          else
+            # Patch version bump (fixes, chores, etc.)
+            PATCH=$((PATCH + 1))
+            BUMP_TYPE="patch"
+          fi
+          
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "Version bump: $CURRENT_VERSION -> $NEW_VERSION ($BUMP_TYPE)"
+      
+      - name: Update version in files
+        run: |
+          # Update package.json
+          sed -i 's/"version": ".*"/"version": "${{ steps.version_bump.outputs.new_version }}"/' package.json
+          
+          # Update Cargo.toml
+          sed -i 's/^version = ".*"/version = "${{ steps.version_bump.outputs.new_version }}"/' src-tauri/Cargo.toml
+          
+          # Update tauri.conf.json
+          sed -i 's/"version": ".*"/"version": "${{ steps.version_bump.outputs.new_version }}"/' src-tauri/tauri.conf.json
+          
+          # Commit version bump
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to ${{ steps.version_bump.outputs.new_version }}"
+          git push
+      
       - name: Generate version
         id: version
         run: |
-          VERSION="v0.1.${{ github.run_number }}"
+          VERSION="v${{ steps.version_bump.outputs.new_version }}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Generated version: $VERSION"
       
