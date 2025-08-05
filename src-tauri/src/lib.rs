@@ -118,7 +118,7 @@ fn show_popup_window(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::E
             Ok(())
         }
         Err(e) => {
-            eprintln!("Failed to create popup window: {}", e);
+            eprintln!("Failed to create popup window: {e}");
             Err(e)
         }
     }

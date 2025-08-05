@@ -40,7 +40,7 @@ pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std
                 println!("Popup window destroyed");
             }
             WindowEvent::Focused(focused) => {
-                println!("Popup window focus changed: {}", focused);
+                println!("Popup window focus changed: {focused}");
 
                 // 初回フォーカス完了後、フォーカスを失ったら閉じる
                 if initial_focus_done_clone.load(Ordering::Relaxed) && !*focused {
