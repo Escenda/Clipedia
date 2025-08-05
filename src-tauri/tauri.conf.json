@@ -65,5 +65,15 @@
       "providerShortName": null,
       "signingIdentity": null
     }
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/Escenda/Clipedia/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": ""
+    }
   }
 }

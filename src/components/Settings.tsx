@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Monitor, Bell, Keyboard } from 'lucide-react';
+import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download } from 'lucide-react';
 
 interface SettingsProps {
   // 設定の状態を管理するprops（後で実装）
@@ -22,6 +22,10 @@ export const Settings: React.FC<SettingsProps> = () => {
     // クリップボード監視
     monitoringEnabled: true,
     maxHistorySize: 1000,
+    
+    // 自動更新
+    autoUpdate: true,
+    checkUpdateOnStartup: true,
   });
 
   const handleSettingChange = (key: string, value: boolean | number) => {
@@ -158,6 +162,40 @@ export const Settings: React.FC<SettingsProps> = () => {
                 <kbd className="px-3 py-1 text-sm font-semibold text-gray-800 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded">Alt + Z</kbd>
               </div>
             </div>
+          </section>
+
+          {/* 自動更新 */}
+          <section className="bg-white dark:bg-gray-900 rounded-lg p-6 space-y-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Download className="h-5 w-5 text-gray-400" />
+              <h3 className="text-lg font-medium">自動更新</h3>
+            </div>
+            
+            <label className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+              <div>
+                <div className="font-medium">自動更新を有効にする</div>
+                <div className="text-sm text-gray-500">新しいバージョンが利用可能な場合、自動的にダウンロードして更新</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.autoUpdate}
+                onChange={(e) => handleSettingChange('autoUpdate', e.target.checked)}
+                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+              <div>
+                <div className="font-medium">起動時に更新を確認</div>
+                <div className="text-sm text-gray-500">アプリケーション起動時に新しいバージョンをチェック</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.checkUpdateOnStartup}
+                onChange={(e) => handleSettingChange('checkUpdateOnStartup', e.target.checked)}
+                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+            </label>
           </section>
         </div>
       </div>

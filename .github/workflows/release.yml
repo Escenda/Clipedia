@@ -35,6 +35,7 @@ jobs:
     outputs:
       release_id: ${{ steps.create-release.outputs.id }}
       release_upload_url: ${{ steps.create-release.outputs.upload_url }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       
@@ -205,6 +206,57 @@ jobs:
     needs: [create-release, build-tauri]
     
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          
+      - name: Generate update manifest
+        run: |
+          VERSION="${{ needs.create-release.outputs.version }}"
+          RELEASE_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          
+          # Create latest.json for auto-updater
+          cat > latest.json << EOF
+          {
+            "version": "${VERSION#v}",
+            "notes": "See the full release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
+            "pub_date": "${RELEASE_DATE}",
+            "platforms": {
+              "darwin-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Clipedia_${VERSION#v}_universal.dmg"
+              },
+              "darwin-aarch64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Clipedia_${VERSION#v}_universal.dmg"
+              },
+              "linux-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Clipedia_${VERSION#v}_amd64.AppImage"
+              },
+              "windows-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Clipedia_${VERSION#v}_x64-setup.exe"
+              }
+            }
+          }
+          EOF
+          
+      - name: Upload update manifest
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.release_upload_url }}
+          asset_path: ./latest.json
+          asset_name: latest.json
+          asset_content_type: application/json
+      
       - name: Publish release
         id: publish-release
         uses: actions/github-script@v7

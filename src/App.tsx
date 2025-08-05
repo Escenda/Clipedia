@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { ContentArea } from './components/ContentArea';
 import { Settings } from './components/Settings';
+import { UpdateChecker } from './components/UpdateChecker';
 import { ClipboardItem } from './types/clipboard';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -152,23 +153,26 @@ function App() {
   }
 
   return (
-    <Layout
-      stats={stats}
-      activeSection={activeSection}
-      onSectionChange={setActiveSection}
-    >
-      {activeSection === 'settings' ? (
-        <Settings />
-      ) : (
-        <ContentArea
-          items={filteredItems}
-          onCopy={handleCopy}
-          onPin={handlePin}
-          onDelete={handleDelete}
-          onAddTag={handleAddTag}
-        />
-      )}
-    </Layout>
+    <>
+      <Layout
+        stats={stats}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      >
+        {activeSection === 'settings' ? (
+          <Settings />
+        ) : (
+          <ContentArea
+            items={filteredItems}
+            onCopy={handleCopy}
+            onPin={handlePin}
+            onDelete={handleDelete}
+            onAddTag={handleAddTag}
+          />
+        )}
+      </Layout>
+      <UpdateChecker />
+    </>
   );
 }
 
