@@ -2,12 +2,33 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run type check
+        run: npm run build
+
   create-release:
+    needs: test
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -17,22 +38,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Generate version
+        id: version
+        run: |
+          VERSION="v0.1.${{ github.run_number }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+      
+      - name: Create tag
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag -a ${{ steps.version.outputs.version }} -m "Release ${{ steps.version.outputs.version }}"
+          git push origin ${{ steps.version.outputs.version }}
+      
       - name: Create Release
         id: create-release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Clipedia ${{ github.ref_name }}
-          draft: true
+          tag_name: ${{ steps.version.outputs.version }}
+          release_name: Clipedia ${{ steps.version.outputs.version }}
+          draft: false
           prerelease: false
           body: |
-            # Clipedia ${{ github.ref_name }}
+            # Clipedia ${{ steps.version.outputs.version }}
             
             エレガントなクリップボード管理ツール
             
-            ## 新機能
+            ## 最新の変更
+            - 🎯 Alt+Z グローバルホットキーでクイックアクセス
             - 🎨 新しいミニマルデザイン
             - 🌓 ダークモード/ライトモード切り替え
             - 📌 改善されたピン留め機能
@@ -43,6 +79,9 @@ jobs:
             - **Windows**: `Clipedia_*_x64-setup.exe` または `.msi`
             - **macOS**: `Clipedia_*_universal.dmg`
             - **Linux**: `clipedia_*_amd64.AppImage` または `.deb`
+            
+            ## コミット履歴
+            ${{ github.event.head_commit.message }}
 
   build-tauri:
     needs: create-release
