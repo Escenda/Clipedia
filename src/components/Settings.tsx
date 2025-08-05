@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Settings as SettingsIcon, Monitor, Bell, Keyboard } from 'lucide-react';
 
 interface SettingsProps {
