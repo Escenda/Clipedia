@@ -17,7 +17,7 @@ export const ClipboardItem: React.FC<ClipboardItemProps> = ({
   onCopy,
   onPin,
   onDelete,
-  onAddTag,
+  // onAddTag,
 }) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('ja-JP', {

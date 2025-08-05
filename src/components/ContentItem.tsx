@@ -1,5 +1,5 @@
 import React from 'react';
-import { Copy, Pin, PinOff, Trash2, ExternalLink } from 'lucide-react';
+import { Copy, Pin, PinOff, Trash2 } from 'lucide-react';
 import { ClipboardItem as ClipboardItemType } from '../types/clipboard';
 import { cn } from '../lib/utils';
 
@@ -16,7 +16,7 @@ export const ContentItem: React.FC<ContentItemProps> = ({
   onCopy,
   onPin,
   onDelete,
-  onAddTag,
+  // onAddTag,
 }) => {
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {

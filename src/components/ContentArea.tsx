@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search } from 'lucide-react';
+// import { Search } from 'lucide-react';
 import { ClipboardItem } from '../types/clipboard';
 import { ContentItem } from './ContentItem';
 import { cn } from '../lib/utils';

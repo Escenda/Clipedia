@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { ContentArea } from './components/ContentArea';
 import { ClipboardItem } from './types/clipboard';
@@ -62,16 +62,16 @@ function App() {
     }
   };
 
-  const handleDeleteAll = async () => {
-    if (window.confirm('すべての履歴を削除しますか？')) {
-      try {
-        await invoke('delete_all_items');
-        await loadClipboardHistory();
-      } catch (error) {
-        console.error('Failed to delete all items:', error);
-      }
-    }
-  };
+  // const handleDeleteAll = async () => {
+  //   if (window.confirm('すべての履歴を削除しますか？')) {
+  //     try {
+  //       await invoke('delete_all_items');
+  //       await loadClipboardHistory();
+  //     } catch (error) {
+  //       console.error('Failed to delete all items:', error);
+  //     }
+  //   }
+  // };
 
   const handleAddTag = async (id: string, tag: string) => {
     try {
