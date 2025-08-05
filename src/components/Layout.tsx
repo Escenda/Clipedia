@@ -1,5 +1,5 @@
 import React from 'react';
-import { Archive, Clock, Heart, Home, Moon, Sun } from 'lucide-react';
+import { Archive, Clock, Heart, Home, Moon, Sun, Settings } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -12,8 +12,8 @@ interface LayoutProps {
     recent: number;
     archive: number;
   };
-  activeSection: 'collection' | 'curated' | 'recent' | 'archive';
-  onSectionChange: (section: 'collection' | 'curated' | 'recent' | 'archive') => void;
+  activeSection: 'collection' | 'curated' | 'recent' | 'archive' | 'settings';
+  onSectionChange: (section: 'collection' | 'curated' | 'recent' | 'archive' | 'settings') => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -72,6 +72,24 @@ export const Layout: React.FC<LayoutProps> = ({
               <span className="text-sm text-gray-400 tabular-nums">{item.count}</span>
             </button>
           ))}
+          
+          {/* Settings - separate from other items */}
+          <div className="border-t border-gray-100 dark:border-gray-900 mt-4 pt-4">
+            <button
+              onClick={() => onSectionChange('settings')}
+              className={cn(
+                "w-full flex items-center justify-between py-4 px-2 text-left transition-colors",
+                activeSection === 'settings'
+                  ? "text-gray-900 dark:text-white font-medium"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                <span className="text-lg">Settings</span>
+              </div>
+            </button>
+          </div>
         </nav>
 
         {/* Stats */}

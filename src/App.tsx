@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { ContentArea } from './components/ContentArea';
+import { Settings } from './components/Settings';
 import { ClipboardItem } from './types/clipboard';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 function App() {
   const [clipboardItems, setClipboardItems] = useState<ClipboardItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'collection' | 'curated' | 'recent' | 'archive'>('collection');
+  const [activeSection, setActiveSection] = useState<'collection' | 'curated' | 'recent' | 'archive' | 'settings'>('collection');
 
   const loadClipboardHistory = async () => {
     try {
@@ -29,8 +31,25 @@ function App() {
     loadClipboardHistory();
     
     // Refresh every 2 seconds
-    const interval = setInterval(loadClipboardHistory, 2000);
-    return () => clearInterval(interval);
+    const interval = setInterval(async () => {
+      await loadClipboardHistory();
+      // トレイメニューも更新
+      try {
+        await invoke('update_tray_menu');
+      } catch (error) {
+        console.error('Failed to update tray menu:', error);
+      }
+    }, 2000);
+    
+    // Listen for switch-to-settings event from tray menu
+    const unlisten = listen('switch-to-settings', () => {
+      setActiveSection('settings');
+    });
+    
+    return () => {
+      clearInterval(interval);
+      unlisten.then(fn => fn());
+    };
   }, []);
 
   const handleCopy = async (item: ClipboardItem) => {
@@ -117,6 +136,8 @@ function App() {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return clipboardItems.filter(item => new Date(item.timestamp) < weekAgo);
+      case 'settings':
+        return []; // 設定画面では使用しない
       default:
         return clipboardItems;
     }
@@ -136,13 +157,17 @@ function App() {
       activeSection={activeSection}
       onSectionChange={setActiveSection}
     >
-      <ContentArea
-        items={filteredItems}
-        onCopy={handleCopy}
-        onPin={handlePin}
-        onDelete={handleDelete}
-        onAddTag={handleAddTag}
-      />
+      {activeSection === 'settings' ? (
+        <Settings />
+      ) : (
+        <ContentArea
+          items={filteredItems}
+          onCopy={handleCopy}
+          onPin={handlePin}
+          onDelete={handleDelete}
+          onAddTag={handleAddTag}
+        />
+      )}
     </Layout>
   );
 }

@@ -1,0 +1,175 @@
+use tauri::{
+    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Emitter, Manager, Runtime,
+};
+
+
+pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
+    // トレイメニューの作成
+    let menu = create_tray_menu(app)?;
+
+    // トレイアイコンの作成
+    let _tray = TrayIconBuilder::with_id("main")
+        .tooltip("Clipedia - クリップボード管理")
+        .icon(app.default_window_icon().unwrap().clone())
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(move |app, event| handle_menu_event(app, event))
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                // ダブルクリックでメインウィンドウを表示
+                // Note: Tauri doesn't have built-in double-click detection for tray
+                // For now, single click will show the window
+                if let Some(window) = tray.app_handle().get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        })
+        .build(app)?;
+
+    Ok(())
+}
+
+pub fn create_tray_menu<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<Menu<R>> {
+    create_tray_menu_with_items(app, &[])
+}
+
+fn create_tray_menu_with_items<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    recent_items: &[(String, String)],
+) -> tauri::Result<Menu<R>> {
+    let menu = Menu::new(app)?;
+
+    // クイックアクセス
+    let quick_access = MenuItem::with_id(app, "quick_access", "クイックアクセス", true, Some("Alt+Z"))?;
+    menu.append(&quick_access)?;
+
+    // メインウィンドウを開く
+    let show_window = MenuItem::with_id(app, "show_window", "メインウィンドウを開く", true, None::<&str>)?;
+    menu.append(&show_window)?;
+
+    // 設定
+    let settings = MenuItem::with_id(app, "settings", "設定", true, None::<&str>)?;
+    menu.append(&settings)?;
+
+    // セパレーター
+    menu.append(&PredefinedMenuItem::separator(app)?)?;
+
+    // 最近のアイテム
+    
+    if recent_items.is_empty() {
+        let empty_item = MenuItem::with_id(app, "no_items", "(履歴がありません)", false, None::<&str>)?;
+        menu.append(&PredefinedMenuItem::separator(app)?)?;
+        menu.append(&empty_item)?;
+    } else {
+        menu.append(&PredefinedMenuItem::separator(app)?)?;
+        
+        // 最近のアイテムのラベルを追加
+        let recent_label = MenuItem::with_id(app, "recent_label", "最近のアイテム:", false, None::<&str>)?;
+        menu.append(&recent_label)?;
+        
+        for (id, content) in recent_items.iter().take(5) {
+            let truncated = if content.len() > 50 {
+                format!("{}...", &content[..50])
+            } else {
+                content.clone()
+            };
+            
+            let item = MenuItem::with_id(app, &format!("recent_{}", id), truncated, true, None::<&str>)?;
+            menu.append(&item)?;
+        }
+    }
+
+    // セパレーター
+    menu.append(&PredefinedMenuItem::separator(app)?)?;
+
+    // 監視の一時停止/再開
+    let toggle_monitoring = MenuItem::with_id(app, "toggle_monitoring", "監視を一時停止", true, None::<&str>)?;
+    menu.append(&toggle_monitoring)?;
+
+    // 終了
+    let quit = MenuItem::with_id(app, "quit", "終了", true, None::<&str>)?;
+    menu.append(&quit)?;
+
+    Ok(menu)
+}
+
+fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event: tauri::menu::MenuEvent) {
+    match event.id.as_ref() {
+        "quick_access" => {
+            // ポップアップウィンドウを表示
+            let _ = crate::windows::popup::create_popup_window(app);
+        }
+        "show_window" => {
+            // メインウィンドウを表示
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }
+        "settings" => {
+            // 設定画面を表示（メインウィンドウの設定タブを開く）
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+                // 設定タブに切り替えるイベントを送信
+                let _ = window.emit("switch-to-settings", ());
+            }
+        }
+        "toggle_monitoring" => {
+            // 監視の一時停止/再開（後で実装）
+            println!("Toggle monitoring");
+        }
+        "quit" => {
+            // アプリケーションを終了
+            app.exit(0);
+        }
+        id if id.starts_with("recent_") => {
+            // 最近のアイテムがクリックされた
+            if let Some(item_id) = id.strip_prefix("recent_") {
+                // クリップボードにコピー
+                if let Some(state) = app.try_state::<crate::AppState>() {
+                    let db = state.db.lock().unwrap();
+                    if let Ok(items) = db.get_all_items() {
+                        if let Some(item) = items.iter().find(|i| i.id == item_id) {
+                            let _ = state.monitor.copy_to_clipboard(&item.content);
+                        }
+                    }
+                }
+            }
+        }
+        _ => {
+            println!("Menu item clicked: {:?}", event.id);
+        }
+    }
+}
+
+// 最近のアイテムメニューを更新する関数
+pub fn update_recent_items_menu<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    items: Vec<(String, String)>, // (id, content)
+) -> tauri::Result<()> {
+    // トレイアイコンを取得
+    if let Some(tray) = app.tray_by_id("main") {
+        // 新しいメニューを作成
+        let new_menu = create_tray_menu_with_items(app, &items)?;
+        
+        // メニューを更新
+        tray.set_menu(Some(new_menu))?;
+    }
+    
+    Ok(())
+}
+
+// ウィンドウをトレイに最小化する関数
+pub fn minimize_to_tray<R: Runtime>(window: &tauri::WebviewWindow<R>) -> tauri::Result<()> {
+    window.hide()?;
+    Ok(())
+}

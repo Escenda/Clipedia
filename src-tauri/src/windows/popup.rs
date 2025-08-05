@@ -1,8 +1,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
+use tauri::{AppHandle, Manager, Runtime, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
-pub fn create_popup_window(app: &AppHandle) -> Result<WebviewWindow, Box<dyn std::error::Error>> {
+pub fn create_popup_window<R: Runtime>(app: &AppHandle<R>) -> Result<WebviewWindow<R>, Box<dyn std::error::Error>> {
     // 既存のポップアップウィンドウがあれば閉じる
     if let Some(window) = app.get_webview_window("popup") {
         println!("Found existing popup window, closing it");
