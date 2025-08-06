@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download, RefreshCw } from 'lucide-react';
 import { checkUpdate } from '@tauri-apps/plugin-updater';
-import { ask } from '@tauri-apps/plugin-dialog';
 
 interface SettingsProps {
   // 設定の状態を管理するprops（後で実装）
@@ -41,14 +40,9 @@ export const Settings: React.FC<SettingsProps> = () => {
     try {
       const update = await checkUpdate();
       if (update) {
-        const yes = await ask(
-          `新しいバージョン ${update.version} が利用可能です。\n\n更新内容:\n${update.body}\n\n今すぐダウンロードしますか？`,
-          {
-            title: 'アップデート',
-            kind: 'info',
-            okLabel: 'ダウンロード',
-            cancelLabel: 'キャンセル'
-          }
+        // Simple confirmation using window.confirm for now
+        const yes = window.confirm(
+          `新しいバージョン ${update.version} が利用可能です。\n\n更新内容:\n${update.body}\n\n今すぐダウンロードしますか？`
         );
         
         if (yes) {
@@ -57,21 +51,11 @@ export const Settings: React.FC<SettingsProps> = () => {
           // update.downloadAndInstall() を実装
         }
       } else {
-        await ask('最新バージョンを使用しています。', {
-          title: 'アップデート',
-          kind: 'info',
-          okLabel: 'OK',
-          cancelLabel: null
-        });
+        alert('最新バージョンを使用しています。');
       }
     } catch (error) {
       console.error('Update check failed:', error);
-      await ask('更新の確認中にエラーが発生しました。', {
-        title: 'エラー',
-        kind: 'error',
-        okLabel: 'OK',
-        cancelLabel: null
-      });
+      alert('更新の確認中にエラーが発生しました。');
     } finally {
       setCheckingUpdate(false);
     }

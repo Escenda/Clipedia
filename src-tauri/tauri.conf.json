@@ -74,9 +74,6 @@
       ],
       "dialog": true,
       "pubkey": ""
-    },
-    "dialog": {
-      "all": true
     }
   }
 }
