@@ -182,7 +182,7 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event_id: String) {
                     } else {
                         vec![]
                     };
-                    
+
                     // 新しいメニューを作成して設定
                     if let Ok(new_menu) = create_tray_menu_with_items(app, &items) {
                         let _ = tray.set_menu(Some(new_menu));
