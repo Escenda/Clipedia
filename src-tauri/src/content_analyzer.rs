@@ -42,7 +42,7 @@ impl ContentAnalyzer {
 
             // プログラミング言語を特定
             if let Some(lang) = Self::detect_language(content) {
-                tags.push(format!("code:{}", lang));
+                tags.push(format!("code:{lang}"));
             }
         }
 

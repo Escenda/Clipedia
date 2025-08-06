@@ -273,7 +273,7 @@ impl Database {
                  ORDER BY is_pinned DESC, timestamp DESC",
             )?;
 
-            let search_pattern = format!("%{}%", pattern);
+            let search_pattern = format!("%{pattern}%");
             let items = stmt
                 .query_map([search_pattern], |row| {
                     let id: String = row.get(0)?;

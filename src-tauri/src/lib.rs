@@ -195,7 +195,7 @@ pub fn run() {
                 .unwrap();
 
             // システムトレイの作成
-            tray::create_tray(&app_handle)?;
+            tray::create_tray(app_handle)?;
 
             // メインウィンドウのイベントハンドリング
             let main_window = app.get_webview_window("main").unwrap();

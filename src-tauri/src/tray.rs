@@ -1,5 +1,5 @@
 use tauri::{
-    menu::{Menu, MenuItem, PredefinedMenuItem, Submenu},
+    menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, Runtime,
 };
@@ -92,7 +92,7 @@ fn create_tray_menu_with_items<R: Runtime>(
 
             let item = MenuItem::with_id(
                 app,
-                &format!("recent_{}", id),
+                format!("recent_{id}"),
                 truncated,
                 true,
                 None::<&str>,
