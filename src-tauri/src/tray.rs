@@ -209,7 +209,7 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event_id: String) {
             }
         }
         _ => {
-            println!("Menu item clicked: {:?}", event_id);
+            println!("Menu item clicked: {event_id:?}");
         }
     }
 }
