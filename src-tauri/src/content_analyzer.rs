@@ -93,7 +93,7 @@ impl ContentAnalyzer {
 
     fn is_code(content: &str) -> bool {
         let code_patterns = [
-            r"(function|const|let|var|class|def|import|export)",
+            r"(function|const|let|var|class|def|fn|import|export)",
             r"(if|else|for|while|return)",
             r"[\{\}\[\]\(\);]",
             r"(public|private|protected|static)",
