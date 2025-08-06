@@ -1,6 +1,6 @@
 [package]
 name = "clipedia"
-version = "0.3.3"
+version = "0.3.4"
 description = "Secure and flexible clipboard history manager"
 authors = ["Clipedia Team"]
 edition = "2021"
