@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn test_code_detection() {
-        let rust_code = "fn main() {\n    println!(\"Hello\");\n}";
+        let rust_code = "use std::io;\n\nfn main() {\n    let mut input = String::new();\n    println!(\"Hello\");\n}";
         let tags = ContentAnalyzer::analyze(rust_code);
         assert!(tags.contains(&"code".to_string()));
         assert!(tags.contains(&"code:rust".to_string()));
