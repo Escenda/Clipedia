@@ -90,13 +90,8 @@ fn create_tray_menu_with_items<R: Runtime>(
                 content.clone()
             };
 
-            let item = MenuItem::with_id(
-                app,
-                format!("recent_{id}"),
-                truncated,
-                true,
-                None::<&str>,
-            )?;
+            let item =
+                MenuItem::with_id(app, format!("recent_{id}"), truncated, true, None::<&str>)?;
             menu.append(&item)?;
         }
     }
