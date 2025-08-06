@@ -10,6 +10,7 @@ pub struct ClipboardMonitor {
     clipboard: Arc<Mutex<Clipboard>>,
     db: Arc<Mutex<Database>>,
     last_content: Arc<Mutex<Option<String>>>,
+    is_monitoring: Arc<Mutex<bool>>,
 }
 
 impl ClipboardMonitor {
@@ -19,32 +20,37 @@ impl ClipboardMonitor {
             clipboard: Arc::new(Mutex::new(clipboard)),
             db,
             last_content: Arc::new(Mutex::new(None)),
+            is_monitoring: Arc::new(Mutex::new(true)),
         })
     }
 
     pub async fn start_monitoring(&self) {
         loop {
-            if let Ok(current_content) = self.get_clipboard_content() {
-                let should_save = {
-                    let mut last_content = self.last_content.lock().unwrap();
-                    if last_content.as_ref() != Some(&current_content) {
-                        *last_content = Some(current_content.clone());
-                        true
-                    } else {
-                        false
-                    }
-                };
+            // 監視が有効な場合のみ処理
+            let is_monitoring = *self.is_monitoring.lock().unwrap();
+            if is_monitoring {
+                if let Ok(current_content) = self.get_clipboard_content() {
+                    let should_save = {
+                        let mut last_content = self.last_content.lock().unwrap();
+                        if last_content.as_ref() != Some(&current_content) {
+                            *last_content = Some(current_content.clone());
+                            true
+                        } else {
+                            false
+                        }
+                    };
 
-                if should_save && !current_content.trim().is_empty() {
-                    let mut item =
-                        ClipboardItem::new(current_content.clone(), ClipboardItemType::Text);
+                    if should_save && !current_content.trim().is_empty() {
+                        let mut item =
+                            ClipboardItem::new(current_content.clone(), ClipboardItemType::Text);
 
-                    // コンテンツ分析でタグを自動付与
-                    let auto_tags = ContentAnalyzer::analyze(&current_content);
-                    item.tags.extend(auto_tags);
+                        // コンテンツ分析でタグを自動付与
+                        let auto_tags = ContentAnalyzer::analyze(&current_content);
+                        item.tags.extend(auto_tags);
 
-                    if let Ok(db) = self.db.lock() {
-                        let _ = db.insert_item(&item);
+                        if let Ok(db) = self.db.lock() {
+                            let _ = db.insert_item(&item);
+                        }
                     }
                 }
             }
@@ -70,5 +76,15 @@ impl ClipboardMonitor {
         *last_content = Some(content.to_string());
 
         Ok(())
+    }
+
+    pub fn toggle_monitoring(&self) -> bool {
+        let mut is_monitoring = self.is_monitoring.lock().unwrap();
+        *is_monitoring = !*is_monitoring;
+        *is_monitoring
+    }
+
+    pub fn is_monitoring(&self) -> bool {
+        *self.is_monitoring.lock().unwrap()
     }
 }

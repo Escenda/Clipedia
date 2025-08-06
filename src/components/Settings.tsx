@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download } from 'lucide-react';
+import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download, RefreshCw } from 'lucide-react';
+import { checkUpdate } from '@tauri-apps/plugin-updater';
+import { ask } from '@tauri-apps/plugin-dialog';
 
 interface SettingsProps {
   // 設定の状態を管理するprops（後で実装）
 }
 
 export const Settings: React.FC<SettingsProps> = () => {
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [settings, setSettings] = useState({
     // 起動時の動作
     startMinimized: false,
@@ -31,6 +34,47 @@ export const Settings: React.FC<SettingsProps> = () => {
   const handleSettingChange = (key: string, value: boolean | number) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     // TODO: 設定を保存する処理を実装
+  };
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const update = await checkUpdate();
+      if (update) {
+        const yes = await ask(
+          `新しいバージョン ${update.version} が利用可能です。\n\n更新内容:\n${update.body}\n\n今すぐダウンロードしますか？`,
+          {
+            title: 'アップデート',
+            kind: 'info',
+            okLabel: 'ダウンロード',
+            cancelLabel: 'キャンセル'
+          }
+        );
+        
+        if (yes) {
+          // TODO: アップデートのダウンロードとインストール処理
+          console.log('Downloading update...');
+          // update.downloadAndInstall() を実装
+        }
+      } else {
+        await ask('最新バージョンを使用しています。', {
+          title: 'アップデート',
+          kind: 'info',
+          okLabel: 'OK',
+          cancelLabel: null
+        });
+      }
+    } catch (error) {
+      console.error('Update check failed:', error);
+      await ask('更新の確認中にエラーが発生しました。', {
+        title: 'エラー',
+        kind: 'error',
+        okLabel: 'OK',
+        cancelLabel: null
+      });
+    } finally {
+      setCheckingUpdate(false);
+    }
   };
 
   return (
@@ -196,6 +240,17 @@ export const Settings: React.FC<SettingsProps> = () => {
                 className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </label>
+
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={handleCheckUpdate}
+                disabled={checkingUpdate}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`h-4 w-4 ${checkingUpdate ? 'animate-spin' : ''}`} />
+                {checkingUpdate ? '確認中...' : '今すぐ更新を確認'}
+              </button>
+            </div>
           </section>
         </div>
       </div>

@@ -162,12 +162,19 @@ async fn update_tray_menu(
     tray::update_recent_items_menu(&app_handle, items_for_tray).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn toggle_monitoring(state: State<'_, AppState>) -> Result<bool, String> {
+    let is_enabled = state.monitor.toggle_monitoring();
+    Ok(is_enabled)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let app_handle = app.handle();
             let app_dir = app_handle.path().app_data_dir().unwrap();
@@ -231,7 +238,8 @@ pub fn run() {
             update_tag_color,
             delete_custom_tag,
             search_items,
-            get_items_by_tag
+            get_items_by_tag,
+            toggle_monitoring
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

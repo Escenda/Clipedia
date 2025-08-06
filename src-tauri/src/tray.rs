@@ -13,22 +13,36 @@ pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
         .tooltip("Clipedia - クリップボード管理")
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)
-        .show_menu_on_left_click(false)
-        .on_menu_event(move |app, event| handle_menu_event(app, event))
+        .menu_on_left_click(false)
+        .on_menu_event(move |app, event| {
+            // メニューイベントを別スレッドで処理（Windowsの問題を回避）
+            let app_handle = app.clone();
+            let event_id = event.id.to_string();
+            tauri::async_runtime::spawn(async move {
+                handle_menu_event(&app_handle, event_id);
+            });
+        })
         .on_tray_icon_event(|tray, event| {
-            if let TrayIconEvent::Click {
-                button: MouseButton::Left,
-                button_state: MouseButtonState::Up,
-                ..
-            } = event
-            {
-                // ダブルクリックでメインウィンドウを表示
-                // Note: Tauri doesn't have built-in double-click detection for tray
-                // For now, single click will show the window
-                if let Some(window) = tray.app_handle().get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
+            match event {
+                TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } => {
+                    // 左クリックでメインウィンドウを表示
+                    if let Some(window) = tray.app_handle().get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                        let _ = window.unminimize();
+                    }
                 }
+                TrayIconEvent::Click {
+                    button: MouseButton::Right,
+                    ..
+                } => {
+                    // 右クリックは自動的にメニューを表示（Tauriが処理）
+                }
+                _ => {}
             }
         })
         .build(app)?;
@@ -100,10 +114,20 @@ fn create_tray_menu_with_items<R: Runtime>(
     menu.append(&PredefinedMenuItem::separator(app)?)?;
 
     // 監視の一時停止/再開
+    let monitoring_label = if let Some(state) = app.try_state::<crate::AppState>() {
+        if state.monitor.is_monitoring() {
+            "監視を一時停止"
+        } else {
+            "監視を再開"
+        }
+    } else {
+        "監視を一時停止"
+    };
+    
     let toggle_monitoring = MenuItem::with_id(
         app,
         "toggle_monitoring",
-        "監視を一時停止",
+        monitoring_label,
         true,
         None::<&str>,
     )?;
@@ -116,8 +140,8 @@ fn create_tray_menu_with_items<R: Runtime>(
     Ok(menu)
 }
 
-fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event: tauri::menu::MenuEvent) {
-    match event.id.as_ref() {
+fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event_id: String) {
+    match event_id.as_ref() {
         "quick_access" => {
             // ポップアップウィンドウを表示
             let _ = crate::windows::popup::create_popup_window(app);
@@ -139,8 +163,22 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event: tauri::menu::
             }
         }
         "toggle_monitoring" => {
-            // 監視の一時停止/再開（後で実装）
-            println!("Toggle monitoring");
+            // 監視の一時停止/再開
+            if let Some(state) = app.try_state::<crate::AppState>() {
+                let is_enabled = state.monitor.toggle_monitoring();
+                // メニューのラベルを更新
+                if let Some(tray) = app.tray_by_id("main") {
+                    if let Some(menu) = tray.get_menu() {
+                        if let Some(item) = menu.get("toggle_monitoring") {
+                            let _ = item.set_text(if is_enabled {
+                                "監視を一時停止"
+                            } else {
+                                "監視を再開"
+                            });
+                        }
+                    }
+                }
+            }
         }
         "quit" => {
             // アプリケーションを終了
@@ -161,7 +199,7 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event: tauri::menu::
             }
         }
         _ => {
-            println!("Menu item clicked: {:?}", event.id);
+            println!("Menu item clicked: {:?}", event_id);
         }
     }
 }
