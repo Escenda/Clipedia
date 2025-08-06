@@ -17,7 +17,7 @@ pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
         .on_menu_event(move |app, event| {
             // メニューイベントを別スレッドで処理（Windowsの問題を回避）
             let app_handle = app.clone();
-            let event_id = event.id().to_string();
+            let event_id = event.id().0.clone();
             tauri::async_runtime::spawn(async move {
                 handle_menu_event(&app_handle, event_id);
             });
@@ -165,7 +165,7 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event_id: String) {
         "toggle_monitoring" => {
             // 監視の一時停止/再開
             if let Some(state) = app.try_state::<crate::AppState>() {
-                let is_enabled = state.monitor.toggle_monitoring();
+                let _is_enabled = state.monitor.toggle_monitoring();
                 // トレイメニューを再作成して更新
                 if let Some(tray) = app.tray_by_id("main") {
                     // 最近のアイテムを取得
