@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download, RefreshCw } from 'lucide-react';
-import { checkUpdate } from '@tauri-apps/plugin-updater';
+import { check } from '@tauri-apps/plugin-updater';
 
 interface SettingsProps {
   // 設定の状態を管理するprops（後で実装）
@@ -38,7 +38,7 @@ export const Settings: React.FC<SettingsProps> = () => {
   const handleCheckUpdate = async () => {
     setCheckingUpdate(true);
     try {
-      const update = await checkUpdate();
+      const update = await check();
       if (update) {
         // Simple confirmation using window.confirm for now
         const yes = window.confirm(
