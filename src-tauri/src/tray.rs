@@ -13,11 +13,11 @@ pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
         .tooltip("Clipedia - クリップボード管理")
         .icon(app.default_window_icon().unwrap().clone())
         .menu(&menu)
-        .menu_on_left_click(false)
+        .show_menu_on_left_click(false)
         .on_menu_event(move |app, event| {
             // メニューイベントを別スレッドで処理（Windowsの問題を回避）
             let app_handle = app.clone();
-            let event_id = event.id.to_string();
+            let event_id = event.id().to_string();
             tauri::async_runtime::spawn(async move {
                 handle_menu_event(&app_handle, event_id);
             });
@@ -166,16 +166,26 @@ fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, event_id: String) {
             // 監視の一時停止/再開
             if let Some(state) = app.try_state::<crate::AppState>() {
                 let is_enabled = state.monitor.toggle_monitoring();
-                // メニューのラベルを更新
+                // トレイメニューを再作成して更新
                 if let Some(tray) = app.tray_by_id("main") {
-                    if let Some(menu) = tray.get_menu() {
-                        if let Some(item) = menu.get("toggle_monitoring") {
-                            let _ = item.set_text(if is_enabled {
-                                "監視を一時停止"
-                            } else {
-                                "監視を再開"
-                            });
+                    // 最近のアイテムを取得
+                    let items = if let Ok(db) = state.db.lock() {
+                        if let Ok(all_items) = db.get_all_items() {
+                            all_items
+                                .into_iter()
+                                .take(5)
+                                .map(|item| (item.id, item.content))
+                                .collect::<Vec<_>>()
+                        } else {
+                            vec![]
                         }
+                    } else {
+                        vec![]
+                    };
+                    
+                    // 新しいメニューを作成して設定
+                    if let Ok(new_menu) = create_tray_menu_with_items(app, &items) {
+                        let _ = tray.set_menu(Some(new_menu));
                     }
                 }
             }
