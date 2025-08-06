@@ -136,9 +136,9 @@ jobs:
             
             ## ダウンロード
             お使いのプラットフォームに合わせてダウンロードしてください：
-            - **Windows**: `Clipedia_*_x64-setup.exe` または `.msi`
-            - **macOS**: `Clipedia_*_universal.dmg`
-            - **Linux**: `clipedia_*_amd64.AppImage` または `.deb`
+            - **Windows**: \`Clipedia_*_x64-setup.exe\` または \`.msi\`
+            - **macOS**: \`Clipedia_*_universal.dmg\`
+            - **Linux**: \`clipedia_*_amd64.AppImage\` または \`.deb\`
             
             ## コミット履歴
             ${{ github.event.head_commit.message }}`
