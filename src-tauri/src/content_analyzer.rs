@@ -39,7 +39,7 @@ impl ContentAnalyzer {
         // コード検出
         if Self::is_code(content) {
             tags.push("code".to_string());
-            
+
             // プログラミング言語を特定
             if let Some(lang) = Self::detect_language(content) {
                 tags.push(format!("code:{}", lang));
@@ -72,23 +72,23 @@ impl ContentAnalyzer {
 
     fn is_json(content: &str) -> bool {
         let trimmed = content.trim();
-        (trimmed.starts_with('{') && trimmed.ends_with('}')) ||
-        (trimmed.starts_with('[') && trimmed.ends_with(']'))
+        (trimmed.starts_with('{') && trimmed.ends_with('}'))
+            || (trimmed.starts_with('[') && trimmed.ends_with(']'))
     }
 
     fn is_markdown(content: &str) -> bool {
         let markdown_patterns = [
-            r"^#{1,6}\s",        // Headers
-            r"\*\*[^*]+\*\*",    // Bold
-            r"\*[^*]+\*",        // Italic
-            r"\[.+\]\(.+\)",     // Links
-            r"^[\*\-]\s",        // Lists
-            r"```",              // Code blocks
+            r"^#{1,6}\s",     // Headers
+            r"\*\*[^*]+\*\*", // Bold
+            r"\*[^*]+\*",     // Italic
+            r"\[.+\]\(.+\)",  // Links
+            r"^[\*\-]\s",     // Lists
+            r"```",           // Code blocks
         ];
 
-        markdown_patterns.iter().any(|pattern| {
-            Regex::new(pattern).unwrap().is_match(content)
-        })
+        markdown_patterns
+            .iter()
+            .any(|pattern| Regex::new(pattern).unwrap().is_match(content))
     }
 
     fn is_code(content: &str) -> bool {
@@ -99,29 +99,69 @@ impl ContentAnalyzer {
             r"(public|private|protected|static)",
         ];
 
-        let matches = code_patterns.iter().filter(|pattern| {
-            Regex::new(pattern).unwrap().is_match(content)
-        }).count();
+        let matches = code_patterns
+            .iter()
+            .filter(|pattern| Regex::new(pattern).unwrap().is_match(content))
+            .count();
 
         matches >= 2
     }
 
     fn detect_language(content: &str) -> Option<String> {
         let language_patterns = vec![
-            ("rust", vec![r"fn\s+\w+", r"let\s+mut", r"impl\s+", r"use\s+\w+::"]),
-            ("javascript", vec![r"const\s+\w+\s*=", r"=>\s*\{", r"function\s+\w+\(", r"\.then\("]),
-            ("typescript", vec![r":\s*(string|number|boolean)", r"interface\s+\w+", r"type\s+\w+\s*="]),
-            ("python", vec![r"def\s+\w+\(", r"import\s+\w+", r":\s*$", r"if\s+__name__"]),
-            ("java", vec![r"public\s+class", r"private\s+\w+", r"@Override", r"new\s+\w+\("]),
-            ("go", vec![r"func\s+\w+\(", r"package\s+\w+", r":=", r"go\s+func"]),
-            ("cpp", vec![r"#include\s*<", r"std::", r"nullptr", r"template\s*<"]),
-            ("csharp", vec![r"using\s+System", r"namespace\s+\w+", r"public\s+override"]),
+            (
+                "rust",
+                vec![r"fn\s+\w+", r"let\s+mut", r"impl\s+", r"use\s+\w+::"],
+            ),
+            (
+                "javascript",
+                vec![
+                    r"const\s+\w+\s*=",
+                    r"=>\s*\{",
+                    r"function\s+\w+\(",
+                    r"\.then\(",
+                ],
+            ),
+            (
+                "typescript",
+                vec![
+                    r":\s*(string|number|boolean)",
+                    r"interface\s+\w+",
+                    r"type\s+\w+\s*=",
+                ],
+            ),
+            (
+                "python",
+                vec![r"def\s+\w+\(", r"import\s+\w+", r":\s*$", r"if\s+__name__"],
+            ),
+            (
+                "java",
+                vec![
+                    r"public\s+class",
+                    r"private\s+\w+",
+                    r"@Override",
+                    r"new\s+\w+\(",
+                ],
+            ),
+            (
+                "go",
+                vec![r"func\s+\w+\(", r"package\s+\w+", r":=", r"go\s+func"],
+            ),
+            (
+                "cpp",
+                vec![r"#include\s*<", r"std::", r"nullptr", r"template\s*<"],
+            ),
+            (
+                "csharp",
+                vec![r"using\s+System", r"namespace\s+\w+", r"public\s+override"],
+            ),
         ];
 
         for (lang, patterns) in language_patterns {
-            let matches = patterns.iter().filter(|pattern| {
-                Regex::new(pattern).unwrap().is_match(content)
-            }).count();
+            let matches = patterns
+                .iter()
+                .filter(|pattern| Regex::new(pattern).unwrap().is_match(content))
+                .count();
 
             if matches >= 2 {
                 return Some(lang.to_string());

@@ -1,8 +1,8 @@
 use crate::models::{ClipboardItem, ClipboardItemType};
 use chrono::{DateTime, Utc};
+use regex::Regex;
 use rusqlite::{Connection, Result};
 use std::path::Path;
-use regex::Regex;
 
 pub struct Database {
     conn: Connection,
@@ -157,10 +157,10 @@ impl Database {
                     tags,
                     application_source,
                 })
-                })?
-                .collect::<Result<Vec<_>>>()?;
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
-            Ok(items)
+        Ok(items)
     }
 
     fn get_tags_for_item(&self, item_id: &str) -> Result<Vec<String>> {
@@ -210,20 +210,16 @@ impl Database {
 
     // タグマスター管理用メソッド
     pub fn get_all_tags(&self) -> Result<Vec<(String, Option<String>, bool)>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT name, color, is_system FROM tag_master ORDER BY name"
-        )?;
-        
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name, color, is_system FROM tag_master ORDER BY name")?;
+
         let tags = stmt
             .query_map([], |row| {
-                Ok((
-                    row.get(0)?,
-                    row.get(1)?,
-                    row.get::<_, i32>(2)? == 1,
-                ))
+                Ok((row.get(0)?, row.get(1)?, row.get::<_, i32>(2)? == 1))
             })?
             .collect::<Result<Vec<_>>>()?;
-        
+
         Ok(tags)
     }
 
@@ -274,44 +270,45 @@ impl Database {
                 "SELECT id, content, item_type, timestamp, is_pinned, application_source 
                  FROM clipboard_items 
                  WHERE content LIKE ?1
-                 ORDER BY is_pinned DESC, timestamp DESC"
+                 ORDER BY is_pinned DESC, timestamp DESC",
             )?;
-            
+
             let search_pattern = format!("%{}%", pattern);
             let items = stmt
                 .query_map([search_pattern], |row| {
-                let id: String = row.get(0)?;
-                let content: String = row.get(1)?;
-                let item_type_str: String = row.get(2)?;
-                let timestamp_str: String = row.get(3)?;
-                let is_pinned: bool = row.get(4)?;
-                let application_source: Option<String> = row.get(5)?;
+                    let id: String = row.get(0)?;
+                    let content: String = row.get(1)?;
+                    let item_type_str: String = row.get(2)?;
+                    let timestamp_str: String = row.get(3)?;
+                    let is_pinned: bool = row.get(4)?;
+                    let application_source: Option<String> = row.get(5)?;
 
-                let item_type = match item_type_str.as_str() {
-                    "image" => ClipboardItemType::Image,
-                    "file" => ClipboardItemType::File,
-                    _ => ClipboardItemType::Text,
-                };
+                    let item_type = match item_type_str.as_str() {
+                        "image" => ClipboardItemType::Image,
+                        "file" => ClipboardItemType::File,
+                        _ => ClipboardItemType::Text,
+                    };
 
-                let timestamp = DateTime::parse_from_rfc3339(&timestamp_str)
-                    .unwrap()
-                    .with_timezone(&Utc);
+                    let timestamp = DateTime::parse_from_rfc3339(&timestamp_str)
+                        .unwrap()
+                        .with_timezone(&Utc);
 
-                let tags = self.get_tags_for_item(&id).unwrap_or_default();
+                    let tags = self.get_tags_for_item(&id).unwrap_or_default();
 
-                Ok(ClipboardItem {
-                    id,
-                    content,
-                    item_type,
-                    timestamp,
-                    is_pinned,
-                    tags,
-                    application_source,
-                })
+                    Ok(ClipboardItem {
+                        id,
+                        content,
+                        item_type,
+                        timestamp,
+                        is_pinned,
+                        tags,
+                        application_source,
+                    })
                 })?
                 .collect::<Result<Vec<_>>>()?;
 
             Ok(items)
+        }
     }
 
     // タグによるフィルタリング
@@ -354,9 +351,9 @@ impl Database {
                     tags,
                     application_source,
                 })
-                })?
-                .collect::<Result<Vec<_>>>()?;
+            })?
+            .collect::<Result<Vec<_>>>()?;
 
-            Ok(items)
+        Ok(items)
     }
 }

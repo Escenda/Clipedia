@@ -4,7 +4,6 @@ use tauri::{
     Emitter, Manager, Runtime,
 };
 
-
 pub fn create_tray<R: Runtime>(app: &tauri::AppHandle<R>) -> tauri::Result<()> {
     // トレイメニューの作成
     let menu = create_tray_menu(app)?;
@@ -48,11 +47,18 @@ fn create_tray_menu_with_items<R: Runtime>(
     let menu = Menu::new(app)?;
 
     // クイックアクセス
-    let quick_access = MenuItem::with_id(app, "quick_access", "クイックアクセス", true, Some("Alt+Z"))?;
+    let quick_access =
+        MenuItem::with_id(app, "quick_access", "クイックアクセス", true, Some("Alt+Z"))?;
     menu.append(&quick_access)?;
 
     // メインウィンドウを開く
-    let show_window = MenuItem::with_id(app, "show_window", "メインウィンドウを開く", true, None::<&str>)?;
+    let show_window = MenuItem::with_id(
+        app,
+        "show_window",
+        "メインウィンドウを開く",
+        true,
+        None::<&str>,
+    )?;
     menu.append(&show_window)?;
 
     // 設定
@@ -63,26 +69,34 @@ fn create_tray_menu_with_items<R: Runtime>(
     menu.append(&PredefinedMenuItem::separator(app)?)?;
 
     // 最近のアイテム
-    
+
     if recent_items.is_empty() {
-        let empty_item = MenuItem::with_id(app, "no_items", "(履歴がありません)", false, None::<&str>)?;
+        let empty_item =
+            MenuItem::with_id(app, "no_items", "(履歴がありません)", false, None::<&str>)?;
         menu.append(&PredefinedMenuItem::separator(app)?)?;
         menu.append(&empty_item)?;
     } else {
         menu.append(&PredefinedMenuItem::separator(app)?)?;
-        
+
         // 最近のアイテムのラベルを追加
-        let recent_label = MenuItem::with_id(app, "recent_label", "最近のアイテム:", false, None::<&str>)?;
+        let recent_label =
+            MenuItem::with_id(app, "recent_label", "最近のアイテム:", false, None::<&str>)?;
         menu.append(&recent_label)?;
-        
+
         for (id, content) in recent_items.iter().take(5) {
             let truncated = if content.len() > 50 {
                 format!("{}...", &content[..50])
             } else {
                 content.clone()
             };
-            
-            let item = MenuItem::with_id(app, &format!("recent_{}", id), truncated, true, None::<&str>)?;
+
+            let item = MenuItem::with_id(
+                app,
+                &format!("recent_{}", id),
+                truncated,
+                true,
+                None::<&str>,
+            )?;
             menu.append(&item)?;
         }
     }
@@ -91,7 +105,13 @@ fn create_tray_menu_with_items<R: Runtime>(
     menu.append(&PredefinedMenuItem::separator(app)?)?;
 
     // 監視の一時停止/再開
-    let toggle_monitoring = MenuItem::with_id(app, "toggle_monitoring", "監視を一時停止", true, None::<&str>)?;
+    let toggle_monitoring = MenuItem::with_id(
+        app,
+        "toggle_monitoring",
+        "監視を一時停止",
+        true,
+        None::<&str>,
+    )?;
     menu.append(&toggle_monitoring)?;
 
     // 終了
@@ -160,11 +180,11 @@ pub fn update_recent_items_menu<R: Runtime>(
     if let Some(tray) = app.tray_by_id("main") {
         // 新しいメニューを作成
         let new_menu = create_tray_menu_with_items(app, &items)?;
-        
+
         // メニューを更新
         tray.set_menu(Some(new_menu))?;
     }
-    
+
     Ok(())
 }
 

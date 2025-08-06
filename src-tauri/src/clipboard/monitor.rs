@@ -1,6 +1,6 @@
+use crate::content_analyzer::ContentAnalyzer;
 use crate::db::Database;
 use crate::models::{ClipboardItem, ClipboardItemType};
-use crate::content_analyzer::ContentAnalyzer;
 use arboard::Clipboard;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -36,12 +36,13 @@ impl ClipboardMonitor {
                 };
 
                 if should_save && !current_content.trim().is_empty() {
-                    let mut item = ClipboardItem::new(current_content.clone(), ClipboardItemType::Text);
-                    
+                    let mut item =
+                        ClipboardItem::new(current_content.clone(), ClipboardItemType::Text);
+
                     // コンテンツ分析でタグを自動付与
                     let auto_tags = ContentAnalyzer::analyze(&current_content);
                     item.tags.extend(auto_tags);
-                    
+
                     if let Ok(db) = self.db.lock() {
                         let _ = db.insert_item(&item);
                     }

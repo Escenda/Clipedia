@@ -1,9 +1,9 @@
 mod clipboard;
+mod content_analyzer;
 mod db;
 mod models;
 mod tray;
 mod windows;
-mod content_analyzer;
 
 use clipboard::ClipboardMonitor;
 use db::Database;
@@ -30,18 +30,18 @@ async fn get_recent_items(
 ) -> Result<Vec<ClipboardItem>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let items = db.get_all_items().map_err(|e| e.to_string())?;
-    
+
     // 最近の5件を取得
     let recent_items: Vec<ClipboardItem> = items.into_iter().take(5).collect();
-    
+
     // トレイメニューを更新
     let items_for_tray: Vec<(String, String)> = recent_items
         .iter()
         .map(|item| (item.id.clone(), item.content.clone()))
         .collect();
-    
+
     let _ = tray::update_recent_items_menu(&app_handle, items_for_tray);
-    
+
     Ok(recent_items)
 }
 
@@ -89,21 +89,33 @@ async fn remove_tag(
 }
 
 #[tauri::command]
-async fn get_all_tags(state: State<'_, AppState>) -> Result<Vec<(String, Option<String>, bool)>, String> {
+async fn get_all_tags(
+    state: State<'_, AppState>,
+) -> Result<Vec<(String, Option<String>, bool)>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     db.get_all_tags().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn create_custom_tag(state: State<'_, AppState>, name: String, color: Option<String>) -> Result<(), String> {
+async fn create_custom_tag(
+    state: State<'_, AppState>,
+    name: String,
+    color: Option<String>,
+) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    db.create_custom_tag(&name, color.as_deref()).map_err(|e| e.to_string())
+    db.create_custom_tag(&name, color.as_deref())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn update_tag_color(state: State<'_, AppState>, name: String, color: String) -> Result<(), String> {
+async fn update_tag_color(
+    state: State<'_, AppState>,
+    name: String,
+    color: String,
+) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    db.update_tag_color(&name, &color).map_err(|e| e.to_string())
+    db.update_tag_color(&name, &color)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -113,13 +125,21 @@ async fn delete_custom_tag(state: State<'_, AppState>, name: String) -> Result<(
 }
 
 #[tauri::command]
-async fn search_items(state: State<'_, AppState>, pattern: String, use_regex: bool) -> Result<Vec<ClipboardItem>, String> {
+async fn search_items(
+    state: State<'_, AppState>,
+    pattern: String,
+    use_regex: bool,
+) -> Result<Vec<ClipboardItem>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
-    db.search_items(&pattern, use_regex).map_err(|e| e.to_string())
+    db.search_items(&pattern, use_regex)
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_items_by_tag(state: State<'_, AppState>, tag: String) -> Result<Vec<ClipboardItem>, String> {
+async fn get_items_by_tag(
+    state: State<'_, AppState>,
+    tag: String,
+) -> Result<Vec<ClipboardItem>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     db.get_items_by_tag(&tag).map_err(|e| e.to_string())
 }
@@ -131,16 +151,15 @@ async fn update_tray_menu(
 ) -> Result<(), String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     let items = db.get_all_items().map_err(|e| e.to_string())?;
-    
+
     // 最近の5件を取得してトレイメニューを更新
     let items_for_tray: Vec<(String, String)> = items
         .into_iter()
         .take(5)
         .map(|item| (item.id, item.content))
         .collect();
-    
-    tray::update_recent_items_menu(&app_handle, items_for_tray)
-        .map_err(|e| e.to_string())
+
+    tray::update_recent_items_menu(&app_handle, items_for_tray).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -218,7 +237,9 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-fn show_popup_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Result<(), Box<dyn std::error::Error>> {
+fn show_popup_window<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("show_popup_window called from global shortcut");
     match windows::popup::create_popup_window(app) {
         Ok(_) => {
