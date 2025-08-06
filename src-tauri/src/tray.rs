@@ -123,7 +123,7 @@ fn create_tray_menu_with_items<R: Runtime>(
     } else {
         "監視を一時停止"
     };
-    
+
     let toggle_monitoring = MenuItem::with_id(
         app,
         "toggle_monitoring",
