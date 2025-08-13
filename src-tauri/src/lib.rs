@@ -79,6 +79,23 @@ async fn add_tag(item_id: String, tag: String, state: State<'_, AppState>) -> Re
 }
 
 #[tauri::command]
+async fn get_items_paginated(
+    offset: i64,
+    limit: i64,
+    state: State<'_, AppState>,
+) -> Result<Vec<types::ClipboardItem>, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.get_items_paginated(offset, limit)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn get_total_count(state: State<'_, AppState>) -> Result<i64, String> {
+    let db = state.db.lock().map_err(|e| e.to_string())?;
+    db.get_total_count().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn remove_tag(
     item_id: String,
     tag: String,
@@ -231,6 +248,8 @@ pub fn run() {
             delete_item,
             delete_all_items,
             add_tag,
+            get_items_paginated,
+            get_total_count,
             remove_tag,
             update_tray_menu,
             get_all_tags,

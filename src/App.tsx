@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { ContentArea } from './components/ContentArea';
 import { Settings } from './components/Settings';
 import { UpdateChecker } from './components/UpdateChecker';
+import { VirtualizedClipboardHistory } from './components/VirtualizedClipboardHistory';
 import { ClipboardItem } from './types/clipboard';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -11,6 +12,7 @@ function App() {
   const [clipboardItems, setClipboardItems] = useState<ClipboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'collection' | 'curated' | 'recent' | 'archive' | 'settings'>('collection');
+  const [useVirtualScroll] = useState(true); // デフォルトで仮想スクロールを使用
 
   const loadClipboardHistory = async () => {
     try {
@@ -82,16 +84,16 @@ function App() {
     }
   };
 
-  // const handleDeleteAll = async () => {
-  //   if (window.confirm('すべての履歴を削除しますか？')) {
-  //     try {
-  //       await invoke('delete_all_items');
-  //       await loadClipboardHistory();
-  //     } catch (error) {
-  //       console.error('Failed to delete all items:', error);
-  //     }
-  //   }
-  // };
+  const handleDeleteAll = async () => {
+    if (window.confirm('すべての履歴を削除しますか？')) {
+      try {
+        await invoke('delete_all_items');
+        await loadClipboardHistory();
+      } catch (error) {
+        console.error('Failed to delete all items:', error);
+      }
+    }
+  };
 
   const handleAddTag = async (id: string, tag: string) => {
     try {
@@ -161,6 +163,14 @@ function App() {
       >
         {activeSection === 'settings' ? (
           <Settings />
+        ) : useVirtualScroll && activeSection === 'collection' ? (
+          <VirtualizedClipboardHistory
+            onCopy={handleCopy}
+            onPin={handlePin}
+            onDelete={handleDelete}
+            onDeleteAll={handleDeleteAll}
+            onAddTag={handleAddTag}
+          />
         ) : (
           <ContentArea
             items={filteredItems}
