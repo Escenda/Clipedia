@@ -49,9 +49,20 @@ function App() {
       setActiveSection('settings');
     });
     
+    // Handle hash change for navigation
+    const handleHashChange = () => {
+      if (window.location.hash === '#settings') {
+        setActiveSection('settings');
+      }
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Check initial hash
+    
     return () => {
       clearInterval(interval);
       unlisten.then(fn => fn());
+      window.removeEventListener('hashchange', handleHashChange);
     };
   }, []);
 

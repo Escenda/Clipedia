@@ -189,6 +189,11 @@ export const VirtualizedClipboardHistory: React.FC<ClipboardHistoryProps> = ({
     setSelectedTags(prev => prev.filter(t => t !== tag));
   };
 
+  const handleCreateTag = () => {
+    // 設定画面のタグ管理セクションに移動
+    window.location.hash = '#settings';
+  };
+
   // Handle item updates
   const handlePin = useCallback(async (id: string) => {
     await onPin(id);
@@ -256,6 +261,7 @@ export const VirtualizedClipboardHistory: React.FC<ClipboardHistoryProps> = ({
               selectedTags={selectedTags}
               onTagSelect={handleTagSelect}
               onTagDeselect={handleTagDeselect}
+              onCreateTag={handleCreateTag}
             />
           </div>
           

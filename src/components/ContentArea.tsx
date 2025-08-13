@@ -93,6 +93,11 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     setSelectedTags(prev => prev.filter(t => t !== tag));
   };
 
+  const handleCreateTag = () => {
+    // 設定画面のタグ管理セクションに移動
+    window.location.hash = '#settings';
+  };
+
   return (
     <>
       {/* Search and Filters */}
@@ -112,6 +117,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
               selectedTags={selectedTags}
               onTagSelect={handleTagSelect}
               onTagDeselect={handleTagDeselect}
+              onCreateTag={handleCreateTag}
             />
           </div>
           

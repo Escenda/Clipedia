@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download, RefreshCw } from 'lucide-react';
+import { Settings as SettingsIcon, Monitor, Bell, Keyboard, Download, RefreshCw, Hash } from 'lucide-react';
 import { check } from '@tauri-apps/plugin-updater';
+import { TagManager } from './TagManager';
 
 interface SettingsProps {
   // 設定の状態を管理するprops（後で実装）
@@ -190,6 +191,16 @@ export const Settings: React.FC<SettingsProps> = () => {
                 <kbd className="px-3 py-1 text-sm font-semibold text-gray-800 bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded">Alt + Z</kbd>
               </div>
             </div>
+          </section>
+
+          {/* タグ管理 */}
+          <section className="bg-white dark:bg-gray-900 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Hash className="h-5 w-5 text-gray-400" />
+              <h3 className="text-lg font-medium">タグ管理</h3>
+            </div>
+            
+            <TagManager />
           </section>
 
           {/* 自動更新 */}

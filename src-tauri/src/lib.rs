@@ -83,7 +83,7 @@ async fn get_items_paginated(
     offset: i64,
     limit: i64,
     state: State<'_, AppState>,
-) -> Result<Vec<types::ClipboardItem>, String> {
+) -> Result<Vec<models::ClipboardItem>, String> {
     let db = state.db.lock().map_err(|e| e.to_string())?;
     db.get_items_paginated(offset, limit)
         .map_err(|e| e.to_string())
